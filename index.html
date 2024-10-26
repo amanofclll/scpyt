@@ -9,39 +9,92 @@
       background-color: #2c2335;
       color: #ffffff;
       font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
     }
+
     h1 {
       color: #f0e6f6;
+      text-align: center;
     }
-    #add-topic-form input, #add-topic-form button, #platform-filter, #share-link, #import-url, #import-button {
+
+    form, .button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+    }
+
+    input[type="text"], input[type="date"], select {
       background-color: #4b3b5c;
       color: #ffffff;
       border: 1px solid #6c5a7b;
-      padding: 5px;
+      padding: 10px;
       margin: 5px 0;
       border-radius: 5px;
+      width: 90%;
+      max-width: 300px;
     }
-    #add-topic-form button, #import-button {
+
+    button {
+      background-color: #6c5a7b;
+      color: #ffffff;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
       cursor: pointer;
+      transition: background-color 0.3s;
+      width: 90%;
+      max-width: 300px;
     }
+
+    button:hover {
+      background-color: #8e7a9d;
+    }
+
     .content-item {
       display: flex;
+      justify-content: center;
       align-items: center;
       margin-bottom: 10px;
       padding: 10px;
       background-color: #3a2e4d;
       border-radius: 5px;
+      flex-direction: column; /* Changed to column for layout */
     }
-    .checkbox-red, .checkbox-green {
+
+    .topic-controls {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 5px; /* Spacing between lines */
+    }
+
+    .checkbox-red, .checkbox-blue, .checkbox-green {
       width: 20px;
       height: 20px;
       cursor: pointer;
+      margin: 0 5px; /* Space between checkboxes */
     }
+
+    .checkbox-red {
+      accent-color: red;
+    }
+
+    .checkbox-blue {
+      accent-color: blue;
+    }
+
+    .checkbox-green {
+      accent-color: green;
+    }
+
     .delete-button {
       margin-left: 10px;
       color: #ff6b6b;
       cursor: pointer;
     }
+
     .topic-title {
       background-color: #4b3b5c;
       color: #ffffff;
@@ -49,19 +102,17 @@
       padding: 3px;
       margin-left: 10px;
       border-radius: 3px;
-      font-size: 1em;
+      font-size: 1.5em; /* Larger font size for visibility */
+      text-align: center; /* Center text */
+      width: 80%; /* Adjust width for better appearance */
     }
-    .priority, .due-date {
-      margin-left: 10px;
-      font-size: 0.9em;
-    }
+
     .priority {
       color: #ffd700;
       font-weight: bold;
+      margin-top: 5px; /* Space between lines */
     }
-    .due-date {
-      color: #b0a0c3;
-    }
+
     #progress-bar {
       margin-top: 10px;
       padding: 5px;
@@ -69,6 +120,30 @@
       color: #ffffff;
       border-radius: 5px;
       text-align: center;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 600px) {
+      .content-item {
+        flex-direction: column;
+      }
+
+      .topic-controls, .topic-title {
+        width: 100%; /* Full width for mobile */
+      }
+    }
+
+    /* Filter and Share section */
+    .filter-container {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      margin: 10px 0;
+    }
+
+    .filter-container select {
+      width: 50%;
+      max-width: 300px;
     }
   </style>
 </head>
@@ -81,12 +156,21 @@
     <button type="submit">Add Topic</button>
   </form>
 
-  <label for="platform-filter">Filter by Platform:</label>
-  <select id="platform-filter">
-    <option value="all">All</option>
-    <option value="YouTube">YouTube</option>
-    <option value="Reels">Reels</option>
-  </select>
+  <div class="filter-container">
+    <label for="platform-filter">Filter by Platform:</label>
+    <select id="platform-filter">
+      <option value="all">All</option>
+      <option value="YouTube">YouTube</option>
+      <option value="Reels">Reels</option>
+    </select>
+    <label for="status-filter">Filter by Status:</label>
+    <select id="status-filter">
+      <option value="all">All</option>
+      <option value="shootDone">Shoot Done</option>
+      <option value="edited">Edited</option>
+      <option value="delivered">Delivered</option>
+    </select>
+  </div>
 
   <div id="progress-bar"></div>
   <div id="content-list"></div>
@@ -106,101 +190,128 @@
 
     const contentList = document.getElementById("content-list");
     const platformFilter = document.getElementById("platform-filter");
+    const statusFilter = document.getElementById("status-filter");
 
-    // Render topics based on filter selection
+    // Render topics based on filters
     function renderTopics() {
       contentList.innerHTML = "";
-      const filter = platformFilter.value;
-      const filteredTopics = filter === "all" ? topics : topics.filter(topic => topic.platform === filter);
+      const platformFilterValue = platformFilter.value;
+      const statusFilterValue = statusFilter.value;
+
+      const filteredTopics = topics.filter(topic => {
+        const matchesPlatform = platformFilterValue === "all" || topic.platform === platformFilterValue;
+        const matchesStatus = statusFilterValue === "all" || 
+          (statusFilterValue === "shootDone" && topic.shootDone) ||
+          (statusFilterValue === "edited" && topic.edited) ||
+          (statusFilterValue === "delivered" && topic.delivered);
+        return matchesPlatform && matchesStatus;
+      });
       
       filteredTopics.forEach((topic, index) => {
         const item = document.createElement("div");
         item.className = "content-item";
         
+        // Create topic controls (checkboxes)
+        const controls = document.createElement("div");
+        controls.className = "topic-controls";
+
         const checkboxRed = document.createElement("input");
         checkboxRed.type = "checkbox";
         checkboxRed.className = "checkbox-red";
-        checkboxRed.checked = !topic.completed;
-        
+        checkboxRed.checked = topic.shootDone;
+        checkboxRed.addEventListener("change", () => toggleStatus(index, 'shootDone'));
+
+        const checkboxBlue = document.createElement("input");
+        checkboxBlue.type = "checkbox";
+        checkboxBlue.className = "checkbox-blue";
+        checkboxBlue.checked = topic.edited;
+        checkboxBlue.addEventListener("change", () => toggleStatus(index, 'edited'));
+
         const checkboxGreen = document.createElement("input");
         checkboxGreen.type = "checkbox";
         checkboxGreen.className = "checkbox-green";
-        checkboxGreen.checked = topic.completed;
+        checkboxGreen.checked = topic.delivered;
+        checkboxGreen.addEventListener("change", () => toggleStatus(index, 'delivered'));
 
-        checkboxRed.addEventListener("change", () => toggleCompletion(index));
-        checkboxGreen.addEventListener("change", () => toggleCompletion(index));
+        controls.appendChild(checkboxRed);
+        controls.appendChild(checkboxBlue);
+        controls.appendChild(checkboxGreen);
+        item.appendChild(controls);
 
+        // Create topic title
         const titleInput = document.createElement("input");
         titleInput.type = "text";
         titleInput.value = topic.title;
         titleInput.className = "topic-title";
         titleInput.addEventListener("blur", () => updateTitle(index, titleInput.value));
 
+        item.appendChild(titleInput);
+
+        // Create priority and delete button
         const priority = document.createElement("span");
         priority.className = "priority";
         priority.textContent = `Priority: ${topic.priority}`;
-        
-        const dueDate = document.createElement("span");
-        dueDate.className = "due-date";
-        dueDate.textContent = topic.dueDate ? `Due: ${topic.dueDate}` : '';
 
         const deleteButton = document.createElement("span");
         deleteButton.className = "delete-button";
         deleteButton.textContent = "❌";
         deleteButton.onclick = () => deleteTopic(index);
 
-        item.appendChild(checkboxRed);
-        item.appendChild(checkboxGreen);
-        item.appendChild(titleInput);
         item.appendChild(priority);
-        item.appendChild(dueDate);
         item.appendChild(deleteButton);
         contentList.appendChild(item);
       });
       updateProgressBar();
     }
 
+    // Add a new topic
     document.getElementById("add-topic-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const title = document.getElementById("new-topic").value;
       const dueDate = document.getElementById("due-date").value;
-      topics.push({ title, completed: false, platform: platformFilter.value, priority: "Medium", dueDate });
+      topics.push({ title, completed: false, platform: platformFilter.value, priority: "Medium", dueDate, shootDone: false, edited: false, delivered: false });
       document.getElementById("new-topic").value = "";
       document.getElementById("due-date").value = "";
       saveTopics();
       renderTopics();
     });
 
-    function toggleCompletion(index) {
-      topics[index].completed = !topics[index].completed;
+    // Toggle status for shoot done, edited, and delivered
+    function toggleStatus(index, statusType) {
+      topics[index][statusType] = !topics[index][statusType];
       saveTopics();
       renderTopics();
     }
 
+    // Update the topic title
     function updateTitle(index, newTitle) {
       topics[index].title = newTitle;
       saveTopics();
       renderTopics();
     }
 
+    // Delete a topic
     function deleteTopic(index) {
       topics.splice(index, 1);
       saveTopics();
       renderTopics();
     }
 
+    // Save topics to LocalStorage
     function saveTopics() {
       localStorage.setItem("topics", JSON.stringify(topics));
     }
 
+    // Update progress bar
     function updateProgressBar() {
-      const completedCount = topics.filter(topic => topic.completed).length;
+      const completedCount = topics.filter(topic => topic.shootDone || topic.edited || topic.delivered).length;
       const progressBar = document.getElementById("progress-bar");
       progressBar.innerHTML = `Progress: ${completedCount} / ${topics.length} completed`;
     }
 
     renderTopics();
     platformFilter.addEventListener("change", renderTopics);
+    statusFilter.addEventListener("change", renderTopics);
 
     // Share Access: Generate shareable link
     document.getElementById("share-access").addEventListener("click", () => {
