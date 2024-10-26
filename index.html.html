@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Tracker Tool</title>
+  <style>
+    body {
+      background-color: #2c2335;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      color: #f0e6f6;
+    }
+    #add-topic-form input, #add-topic-form button, #platform-filter, #share-link, #import-url, #import-button {
+      background-color: #4b3b5c;
+      color: #ffffff;
+      border: 1px solid #6c5a7b;
+      padding: 5px;
+      margin: 5px 0;
+      border-radius: 5px;
+    }
+    #add-topic-form button, #import-button {
+      cursor: pointer;
+    }
+    .content-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: #3a2e4d;
+      border-radius: 5px;
+    }
+    .checkbox-red, .checkbox-green {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .delete-button {
+      margin-left: 10px;
+      color: #ff6b6b;
+      cursor: pointer;
+    }
+    .topic-title {
+      background-color: #4b3b5c;
+      color: #ffffff;
+      border: none;
+      padding: 3px;
+      margin-left: 10px;
+      border-radius: 3px;
+      font-size: 1em;
+    }
+    .priority, .due-date {
+      margin-left: 10px;
+      font-size: 0.9em;
+    }
+    .priority {
+      color: #ffd700;
+      font-weight: bold;
+    }
+    .due-date {
+      color: #b0a0c3;
+    }
+    #progress-bar {
+      margin-top: 10px;
+      padding: 5px;
+      background-color: #4b3b5c;
+      color: #ffffff;
+      border-radius: 5px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Content Tracker Tool</h1>
+
+  <form id="add-topic-form">
+    <input type="text" id="new-topic" placeholder="Enter new topic" required>
+    <label>Due Date: <input type="date" id="due-date"></label>
+    <button type="submit">Add Topic</button>
+  </form>
+
+  <label for="platform-filter">Filter by Platform:</label>
+  <select id="platform-filter">
+    <option value="all">All</option>
+    <option value="YouTube">YouTube</option>
+    <option value="Reels">Reels</option>
+  </select>
+
+  <div id="progress-bar"></div>
+  <div id="content-list"></div>
+
+  <!-- Share and Import Section -->
+  <button id="share-access">Share Access</button>
+  <input type="text" id="share-link" readonly placeholder="Shareable Link will appear here">
+  
+  <h3>Import Data</h3>
+  <input type="text" id="import-url" placeholder="Paste shareable link here">
+  <button id="import-button">Import Data</button>
+
+  <script>
+    // Load or initialize topics from LocalStorage
+    const storedTopics = JSON.parse(localStorage.getItem('topics')) || [];
+    let topics = storedTopics.length ? storedTopics : [];
+
+    const contentList = document.getElementById("content-list");
+    const platformFilter = document.getElementById("platform-filter");
+
+    // Render topics based on filter selection
+    function renderTopics() {
+      contentList.innerHTML = "";
+      const filter = platformFilter.value;
+      const filteredTopics = filter === "all" ? topics : topics.filter(topic => topic.platform === filter);
+      
+      filteredTopics.forEach((topic, index) => {
+        const item = document.createElement("div");
+        item.className = "content-item";
+        
+        const checkboxRed = document.createElement("input");
+        checkboxRed.type = "checkbox";
+        checkboxRed.className = "checkbox-red";
+        checkboxRed.checked = !topic.completed;
+        
+        const checkboxGreen = document.createElement("input");
+        checkboxGreen.type = "checkbox";
+        checkboxGreen.className = "checkbox-green";
+        checkboxGreen.checked = topic.completed;
+
+        checkboxRed.addEventListener("change", () => toggleCompletion(index));
+        checkboxGreen.addEventListener("change", () => toggleCompletion(index));
+
+        const titleInput = document.createElement("input");
+        titleInput.type = "text";
+        titleInput.value = topic.title;
+        titleInput.className = "topic-title";
+        titleInput.addEventListener("blur", () => updateTitle(index, titleInput.value));
+
+        const priority = document.createElement("span");
+        priority.className = "priority";
+        priority.textContent = `Priority: ${topic.priority}`;
+        
+        const dueDate = document.createElement("span");
+        dueDate.className = "due-date";
+        dueDate.textContent = topic.dueDate ? `Due: ${topic.dueDate}` : '';
+
+        const deleteButton = document.createElement("span");
+        deleteButton.className = "delete-button";
+        deleteButton.textContent = "❌";
+        deleteButton.onclick = () => deleteTopic(index);
+
+        item.appendChild(checkboxRed);
+        item.appendChild(checkboxGreen);
+        item.appendChild(titleInput);
+        item.appendChild(priority);
+        item.appendChild(dueDate);
+        item.appendChild(deleteButton);
+        contentList.appendChild(item);
+      });
+      updateProgressBar();
+    }
+
+    document.getElementById("add-topic-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const title = document.getElementById("new-topic").value;
+      const dueDate = document.getElementById("due-date").value;
+      topics.push({ title, completed: false, platform: platformFilter.value, priority: "Medium", dueDate });
+      document.getElementById("new-topic").value = "";
+      document.getElementById("due-date").value = "";
+      saveTopics();
+      renderTopics();
+    });
+
+    function toggleCompletion(index) {
+      topics[index].completed = !topics[index].completed;
+      saveTopics();
+      renderTopics();
+    }
+
+    function updateTitle(index, newTitle) {
+      topics[index].title = newTitle;
+      saveTopics();
+      renderTopics();
+    }
+
+    function deleteTopic(index) {
+      topics.splice(index, 1);
+      saveTopics();
+      renderTopics();
+    }
+
+    function saveTopics() {
+      localStorage.setItem("topics", JSON.stringify(topics));
+    }
+
+    function updateProgressBar() {
+      const completedCount = topics.filter(topic => topic.completed).length;
+      const progressBar = document.getElementById("progress-bar");
+      progressBar.innerHTML = `Progress: ${completedCount} / ${topics.length} completed`;
+    }
+
+    renderTopics();
+    platformFilter.addEventListener("change", renderTopics);
+
+    // Share Access: Generate shareable link
+    document.getElementById("share-access").addEventListener("click", () => {
+      const encodedData = encodeURIComponent(JSON.stringify(topics));
+      const shareableLink = `${window.location.href}?data=${encodedData}`;
+      document.getElementById("share-link").value = shareableLink;
+    });
+
+    // Import Data from shared link
+    document.getElementById("import-button").addEventListener("click", () => {
+      const importUrl = document.getElementById("import-url").value;
+      const urlParams = new URL(importUrl).searchParams;
+      const data = urlParams.get("data");
+      if (data) {
+        topics = JSON.parse(decodeURIComponent(data));
+        saveTopics();
+        renderTopics();
+      } else {
+        alert("Invalid link!");
+      }
+    });
+
+    // Check if there is any shared data in URL when page loads
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedData = urlParams.get("data");
+    if (sharedData) {
+      topics = JSON.parse(decodeURIComponent(sharedData));
+      saveTopics();
+      renderTopics();
+    }
+  </script>
+</body>
+</html>
