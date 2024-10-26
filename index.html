@@ -4,18 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Content Tracker Tool</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
       background-color: #2c2335;
       color: #ffffff;
-      font-family: Arial, sans-serif;
+      font-family: 'Roboto', sans-serif;
       margin: 0;
       padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     h1 {
       color: #f0e6f6;
       text-align: center;
+      margin-bottom: 20px;
     }
 
     form, .button-container {
@@ -23,106 +28,127 @@
       flex-direction: column;
       align-items: center;
       margin: 10px 0;
+      width: 100%; /* Full width for mobile */
     }
 
     input[type="text"], input[type="date"], select {
       background-color: #4b3b5c;
       color: #ffffff;
       border: 1px solid #6c5a7b;
-      padding: 10px;
+      padding: 12px; /* Increased padding for touch target */
       margin: 5px 0;
-      border-radius: 5px;
+      border-radius: 8px; /* Rounded corners */
       width: 90%;
       max-width: 300px;
+      transition: border 0.3s;
+      font-size: 1em; /* Slightly larger font */
+    }
+
+    input[type="text"]:focus, input[type="date"]:focus, select:focus {
+      border-color: #8e7a9d;
+      outline: none;
     }
 
     button {
       background-color: #6c5a7b;
       color: #ffffff;
       border: none;
-      padding: 10px 20px;
-      margin: 5px;
-      border-radius: 5px;
+      padding: 14px 28px; /* Larger padding for touch targets */
+      margin: 5px 0;
+      border-radius: 8px; /* Rounded corners */
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background-color 0.3s, transform 0.2s;
       width: 90%;
       max-width: 300px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      font-size: 1em; /* Consistent font size */
     }
 
     button:hover {
       background-color: #8e7a9d;
+      transform: translateY(-2px);
     }
 
     .content-item {
       display: flex;
-      justify-content: center;
+      flex-direction: column; /* Stack items vertically */
       align-items: center;
-      margin-bottom: 10px;
-      padding: 10px;
+      margin: 10px 0;
+      padding: 12px; /* Adjusted padding */
       background-color: #3a2e4d;
-      border-radius: 5px;
-      flex-direction: column; /* Changed to column for layout */
+      border-radius: 8px;
+      width: 90%;
+      max-width: 300px;
     }
 
     .topic-controls {
       display: flex;
       justify-content: center;
-      margin-bottom: 5px; /* Spacing between lines */
+      margin-bottom: 5px;
     }
 
     .checkbox-red, .checkbox-blue, .checkbox-green {
-      width: 20px;
-      height: 20px;
+      width: 25px; /* Larger checkboxes for easier tapping */
+      height: 25px;
       cursor: pointer;
-      margin: 0 5px; /* Space between checkboxes */
-    }
-
-    .checkbox-red {
-      accent-color: red;
-    }
-
-    .checkbox-blue {
-      accent-color: blue;
-    }
-
-    .checkbox-green {
-      accent-color: green;
+      margin: 0 5px;
     }
 
     .delete-button {
-      margin-left: 10px;
+      margin-top: 10px; /* Space above delete button */
       color: #ff6b6b;
       cursor: pointer;
+      transition: color 0.3s;
+    }
+
+    .delete-button:hover {
+      color: #ff0000;
     }
 
     .topic-title {
       background-color: #4b3b5c;
       color: #ffffff;
       border: none;
-      padding: 3px;
-      margin-left: 10px;
-      border-radius: 3px;
-      font-size: 1.5em; /* Larger font size for visibility */
-      text-align: center; /* Center text */
-      width: 80%; /* Adjust width for better appearance */
+      padding: 8px;
+      margin: 5px 0; /* Space between title and controls */
+      border-radius: 5px; /* Rounded corners */
+      font-size: 1.2em; /* Slightly larger font size */
+      text-align: center;
+      width: 100%; /* Full width */
     }
 
     .priority {
       color: #ffd700;
       font-weight: bold;
-      margin-top: 5px; /* Space between lines */
+      margin-top: 5px;
     }
 
     #progress-bar {
       margin-top: 10px;
-      padding: 5px;
+      padding: 8px;
       background-color: #4b3b5c;
       color: #ffffff;
       border-radius: 5px;
       text-align: center;
+      width: 90%; /* Full width for mobile */
+      max-width: 300px; /* Maintain maximum width */
     }
 
-    /* Responsive Styles */
+    .filter-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+      width: 100%; /* Full width for mobile */
+    }
+
+    .filter-container select {
+      width: 90%;
+      max-width: 300px;
+      padding: 12px; /* Increased padding */
+      margin-bottom: 10px; /* Space between selects */
+    }
+
     @media (max-width: 600px) {
       .content-item {
         flex-direction: column;
@@ -131,19 +157,6 @@
       .topic-controls, .topic-title {
         width: 100%; /* Full width for mobile */
       }
-    }
-
-    /* Filter and Share section */
-    .filter-container {
-      display: flex;
-      justify-content: center;
-      flex-direction: column;
-      margin: 10px 0;
-    }
-
-    .filter-container select {
-      width: 50%;
-      max-width: 300px;
     }
   </style>
 </head>
@@ -175,7 +188,6 @@
   <div id="progress-bar"></div>
   <div id="content-list"></div>
 
-  <!-- Share and Import Section -->
   <button id="share-access">Share Access</button>
   <input type="text" id="share-link" readonly placeholder="Shareable Link will appear here">
   
@@ -184,7 +196,6 @@
   <button id="import-button">Import Data</button>
 
   <script>
-    // Load or initialize topics from LocalStorage
     const storedTopics = JSON.parse(localStorage.getItem('topics')) || [];
     let topics = storedTopics.length ? storedTopics : [];
 
@@ -192,7 +203,6 @@
     const platformFilter = document.getElementById("platform-filter");
     const statusFilter = document.getElementById("status-filter");
 
-    // Render topics based on filters
     function renderTopics() {
       contentList.innerHTML = "";
       const platformFilterValue = platformFilter.value;
@@ -211,7 +221,6 @@
         const item = document.createElement("div");
         item.className = "content-item";
         
-        // Create topic controls (checkboxes)
         const controls = document.createElement("div");
         controls.className = "topic-controls";
 
@@ -238,7 +247,6 @@
         controls.appendChild(checkboxGreen);
         item.appendChild(controls);
 
-        // Create topic title
         const titleInput = document.createElement("input");
         titleInput.type = "text";
         titleInput.value = topic.title;
@@ -247,62 +255,66 @@
 
         item.appendChild(titleInput);
 
-        // Create priority and delete button
-        const priority = document.createElement("span");
+        const priority = document.createElement("div");
         priority.className = "priority";
-        priority.textContent = `Priority: ${topic.priority}`;
+        priority.textContent = `Due Date: ${topic.dueDate || "No Date"}`;
+        item.appendChild(priority);
 
         const deleteButton = document.createElement("span");
         deleteButton.className = "delete-button";
-        deleteButton.textContent = "❌";
-        deleteButton.onclick = () => deleteTopic(index);
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener("click", () => deleteTopic(index));
 
-        item.appendChild(priority);
         item.appendChild(deleteButton);
         contentList.appendChild(item);
       });
+      
       updateProgressBar();
     }
 
-    // Add a new topic
-    document.getElementById("add-topic-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const title = document.getElementById("new-topic").value;
-      const dueDate = document.getElementById("due-date").value;
-      topics.push({ title, completed: false, platform: platformFilter.value, priority: "Medium", dueDate, shootDone: false, edited: false, delivered: false });
-      document.getElementById("new-topic").value = "";
-      document.getElementById("due-date").value = "";
+    document.getElementById("add-topic-form").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const topicInput = document.getElementById("new-topic");
+      const dueDateInput = document.getElementById("due-date");
+      
+      const newTopic = {
+        title: topicInput.value,
+        shootDone: false,
+        edited: false,
+        delivered: false,
+        dueDate: dueDateInput.value,
+        platform: "YouTube" // Default platform; you can modify this
+      };
+
+      topics.push(newTopic);
       saveTopics();
       renderTopics();
+      topicInput.value = "";
+      dueDateInput.value = "";
     });
 
-    // Toggle status for shoot done, edited, and delivered
     function toggleStatus(index, statusType) {
       topics[index][statusType] = !topics[index][statusType];
       saveTopics();
       renderTopics();
     }
 
-    // Update the topic title
     function updateTitle(index, newTitle) {
       topics[index].title = newTitle;
       saveTopics();
       renderTopics();
     }
 
-    // Delete a topic
     function deleteTopic(index) {
       topics.splice(index, 1);
       saveTopics();
       renderTopics();
     }
 
-    // Save topics to LocalStorage
     function saveTopics() {
       localStorage.setItem("topics", JSON.stringify(topics));
     }
 
-    // Update progress bar
     function updateProgressBar() {
       const completedCount = topics.filter(topic => topic.shootDone || topic.edited || topic.delivered).length;
       const progressBar = document.getElementById("progress-bar");
@@ -313,14 +325,12 @@
     platformFilter.addEventListener("change", renderTopics);
     statusFilter.addEventListener("change", renderTopics);
 
-    // Share Access: Generate shareable link
     document.getElementById("share-access").addEventListener("click", () => {
       const encodedData = encodeURIComponent(JSON.stringify(topics));
       const shareableLink = `${window.location.href}?data=${encodedData}`;
       document.getElementById("share-link").value = shareableLink;
     });
 
-    // Import Data from shared link
     document.getElementById("import-button").addEventListener("click", () => {
       const importUrl = document.getElementById("import-url").value;
       const urlParams = new URL(importUrl).searchParams;
@@ -334,7 +344,6 @@
       }
     });
 
-    // Check if there is any shared data in URL when page loads
     const urlParams = new URLSearchParams(window.location.search);
     const sharedData = urlParams.get("data");
     if (sharedData) {
